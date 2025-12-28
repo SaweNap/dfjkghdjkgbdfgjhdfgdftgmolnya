@@ -156,7 +156,7 @@
     min-height: 20px;
   }
 
-  /* Поверхностное сообщение поверх всей страницы */
+  /* Общее сообщение поверх всего */
   #overlayMessage {
     position: fixed;
     top: 0;
@@ -172,13 +172,12 @@
     z-index: 9999;
     padding: 20px;
     text-align: center;
-    display: none; /* по умолчанию скрыт */
+    display: none;
   }
 </style>
 </head>
 <body>
 
-<!-- Общее сообщение поверх всего -->
 <div id="overlayMessage"></div>
 
 <div class="balance" id="balanceDisplay">Баланс: 0 ₽</div>
@@ -195,8 +194,7 @@
 <div id="lightning-effect"></div>
 
 <script>
-// ВАШ КОД: вставьте сюда ваш скрипт, который вы ранее присылали, с учетом, что вызовы alert замените на showOverlayMessage
-const GITHUB_TOKEN = 'ваш токен'; // вставьте свой токен
+const GITHUB_TOKEN = 'ваш токен'; // вставьте сюда свой токен
 const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
 const FILE_PATH = 'users.json';
 
@@ -269,7 +267,6 @@ function showOverlayMessage(text) {
   }, 2000);
 }
 
-// Обработка кнопки "Начать игру"
 document.getElementById('start-game-btn').onclick = () => {
   if (!currentUser) {
     showOverlayMessage('Пользователь не загружен');
@@ -361,6 +358,27 @@ function showLightning(index) {
   lightning.style.animation = 'flicker 0.2s infinite';
 
   setTimeout(() => {
+    // Бьет в ту ячейку, где была молния
+    const cells = document.querySelectorAll('.cell');
+    // добавляем эффект молнии именно в нужную ячейку
+    if (cells[index]) {
+      // вставляем в ячейку элемент молнии
+      const bolt = document.createElement('div');
+      bolt.className = 'lightning';
+      bolt.style.position = 'absolute';
+      bolt.style.top = '0';
+      bolt.style.left = '0';
+      bolt.style.width = '100%';
+      bolt.style.height = '100%';
+      bolt.style.background = 'linear-gradient(135deg, #ffff00, #ffcc00)';
+      bolt.style.clipPath = 'polygon(50% 0%, 60% 20%, 80% 20%, 55% 50%, 70% 50%, 30% 100%, 45% 50%, 20% 50%, 45% 0%)';
+      bolt.style.opacity = '1';
+      bolt.style.animation = 'flicker 0.2s forwards';
+      // очистить все ячейки от молний перед этим
+      document.querySelectorAll('.cell').forEach(c => c.classList.remove('molnia'));
+      // добавляем молнию в выбранную ячейку
+      cells[index].appendChild(bolt);
+    }
     lightningDiv.style.display = 'none';
     lightning.innerHTML = '';
   }, 300);
@@ -424,4 +442,3 @@ async function updateUsersOnGitHub() {
 }
 </script>
 </body>
-</html>
