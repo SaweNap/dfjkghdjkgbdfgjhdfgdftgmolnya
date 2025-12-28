@@ -50,18 +50,15 @@
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     transition: transform 0.2s, background 0.3s, box-shadow 0.3s, outline 0.2s;
   }
-
   .cell:hover {
     background: #777;
     transform: scale(1.05);
     box-shadow: 0 6px 12px rgba(0,0,0,0.4);
   }
-
   .cell.active {
     outline: 3px solid yellow;
   }
-
-  /* подсветка ячейки, где молния */
+  /* подсветка ячейки с молнией */
   .cell.molnia {
     outline: 3px solid red;
   }
@@ -165,18 +162,14 @@
 <div class="balance" id="balanceDisplay">Баланс: 0 ₽</div>
 <input type="number" id="bet-input" placeholder="Введите ставку" min="1" />
 
-<!-- Кнопка "Начать игру" -->
 <button id="start-game-btn">Начать игру</button>
 <p id="message"></p>
+<div id="result"></div>
 
 <h1>Игра Молния</h1>
 <p style="text-align:center;">Выберите ячейку и нажмите "Начать игру"</p>
 
-<div id="game-container" style="position: relative;">
-  <!-- ячейки создаются динамически -->
-</div>
-
-<!-- Молния с эффектом -->
+<div id="game-container" style="position: relative;"></div>
 <div id="lightning-effect"></div>
 
 <script>
@@ -190,6 +183,7 @@ const betInput = document.getElementById('bet-input');
 const startGameBtn = document.getElementById('start-game-btn');
 const gameContainer = document.getElementById('game-container');
 const lightningDiv = document.getElementById('lightning-effect');
+const resultDiv = document.getElementById('result');
 
 let userId = null;
 let users = [];
@@ -206,7 +200,6 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
-    // Разрешить выбор ячейки во время игры
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
@@ -214,14 +207,7 @@ for (let i = 0; i < 9; i++) {
   gameContainer.appendChild(cell);
 }
 
-// Запрет ctrl + колесо мыши
-window.addEventListener('wheel', (e) => {
-  if (e.ctrlKey) {
-    e.preventDefault();
-  }
-}, { passive: false });
-
-// загрузка userId и данных
+// Загрузка данных и инициализация
 (function() {
   const urlParams = new URLSearchParams(window.location.search);
   userId = urlParams.get('id');
@@ -281,42 +267,45 @@ async function startGame(bet) {
     return;
   }
   gameInProgress = true;
-  document.getElementById('result') && (document.getElementById('result').textContent = '');
-  // очищаем активные и молнии ячейки
+  resultDiv.textContent = '';
+
   document.querySelectorAll('.cell').forEach(c => {
     c.classList.remove('active', 'molnia');
     c.style.outline = '';
   });
+
   // выбираем молнию
   lightningIndex = Math.floor(Math.random() * 9);
-  
-  // показываем молнию в выбранную ячейку
   showLightning(lightningIndex);
 
   setTimeout(() => {
-    // подсветка ячейки с молнией
     const cells = document.querySelectorAll('.cell');
+
+    // подсветка ячейки с молнией
     cells[lightningIndex].classList.add('molnia');
-    // подсветка выбранной игроком ячейки
+
+    // подсветка выбранной ячейки
     if (selectedCellIndex !== null) {
       cells[selectedCellIndex].classList.add('active');
     }
 
-    const guessCorrect = lightningIndex === selectedCellIndex;
-    if (guessCorrect) {
-      document.getElementById('result').textContent = 'Вы выиграли!';
-      userBalance += bet * 2;
+    if (lightningIndex === selectedCellIndex) {
+      // выигрыш
+      resultDiv.textContent = 'Вы выиграли!';
+      userBalance += bet * 3; // умножение x3
     } else {
-      document.getElementById('result').textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
-      userBalance -= bet;
-      if (userBalance < 0) userBalance = 0;
+      // проигрыш
+      resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
     }
+
     updateBalanceDisplay(userBalance);
     currentUser.balance = userBalance;
     saveUserBalance();
 
-    // после показа результата сбрасываем выбор
-    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
+    // очистка
+    document.querySelectorAll('.cell').forEach(c => {
+      c.classList.remove('active', 'molnia');
+    });
     selectedCellIndex = null;
     gameInProgress = false;
   }, 1500);
@@ -345,14 +334,13 @@ function showLightning(index) {
   lightningDiv.appendChild(lightning);
   lightning.style.animation = 'flicker 0.2s infinite';
 
-  // Удаляем через 300 мс
   setTimeout(() => {
     lightningDiv.style.display = 'none';
     lightning.innerHTML = '';
   }, 300);
 }
 
-// Ключевые правила
+// анимация мерцания
 const styleSheet = document.styleSheets[0];
 styleSheet.insertRule(`
 @keyframes flicker {
@@ -361,7 +349,7 @@ styleSheet.insertRule(`
 }
 `, styleSheet.cssRules.length);
 
-// Загрузка и сохранение данных
+// загрузка и сохранение
 async function loadUsers() {
   const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
   const response = await fetch(url);
