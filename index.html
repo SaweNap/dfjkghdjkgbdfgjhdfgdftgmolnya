@@ -57,6 +57,10 @@
     box-shadow: 0 6px 12px rgba(0,0,0,0.4);
   }
 
+  .cell.active {
+    outline: 3px solid yellow;
+  }
+
   /* Анимация молнии */
   @keyframes lightning-flicker {
     0%, 100% { opacity: 1; filter: brightness(1); }
@@ -197,8 +201,8 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
-    // Можно выбрать ячейку даже во время игры
-    // Уберите или закомментируйте следующую строку:
+    // Разрешить выбор ячейки во время игры
+    // Удалите или закомментируйте следующую строку, чтобы разрешить выбор во время игры:
     // if (gameInProgress) return;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
     cell.classList.add('active');
@@ -279,7 +283,10 @@ async function startGame(bet) {
     return;
   }
   gameInProgress = true;
-  document.getElementById('result').textContent = '';
+  document.getElementById('result') && (document.getElementById('result').textContent = '');
+
+  // очищаем активные ячейки
+  document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
 
   // выбираем молнию
   lightningIndex = Math.floor(Math.random() * 9);
@@ -288,6 +295,7 @@ async function startGame(bet) {
   showLightning();
 
   setTimeout(() => {
+    // подсветка ячейки с молнией
     document.querySelectorAll('.cell')[lightningIndex].classList.add('active');
 
     setTimeout(() => {
@@ -304,6 +312,7 @@ async function startGame(bet) {
       currentUser.balance = userBalance;
       saveUserBalance();
 
+      // сброс активных ячеек
       document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
       
       // После завершения игры сбрасываем выбранную ячейку
