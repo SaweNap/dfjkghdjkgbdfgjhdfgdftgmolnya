@@ -198,6 +198,8 @@ for (let i = 0; i < 9; i++) {
   cell.dataset.index = i;
   cell.onclick = () => {
     // Можно выбрать ячейку даже во время игры
+    // Уберите или закомментируйте следующую строку:
+    // if (gameInProgress) return;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
     cell.classList.add('active');
     selectedCellIndex = i;
