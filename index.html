@@ -58,17 +58,14 @@
   .cell.active {
     outline: 3px solid yellow;
   }
-  /* подсветка ячейки с молнией */
   .cell.molnia {
     outline: 3px solid red;
   }
 
-  /* Анимация молнии */
   @keyframes lightning-flicker {
     0%, 100% { opacity: 1; filter: brightness(1); }
     50% { opacity: 0.4; filter: brightness(2); }
   }
-
   .lightning {
     position: absolute;
     width: 50px;
@@ -81,7 +78,6 @@
     pointer-events: none;
   }
 
-  /* Молния с эффектом свечения */
   #lightning-effect {
     position: absolute;
     width: 80px;
@@ -200,6 +196,7 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
+    if (gameInProgress) return;
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
@@ -207,7 +204,7 @@ for (let i = 0; i < 9; i++) {
   gameContainer.appendChild(cell);
 }
 
-// Загрузка данных и инициализация
+// Инициализация
 (function() {
   const urlParams = new URLSearchParams(window.location.search);
   userId = urlParams.get('id');
@@ -234,7 +231,6 @@ for (let i = 0; i < 9; i++) {
 function updateBalanceDisplay(balance) {
   document.getElementById('balanceDisplay').textContent = 'Баланс: ' + balance + ' ₽';
 }
-
 function checkButtonState() {
   startGameBtn.disabled = !(userBalance > 0 && currentUser);
   if (userBalance <= 0 || !currentUser) {
@@ -274,35 +270,27 @@ async function startGame(bet) {
     c.style.outline = '';
   });
 
-  // выбираем молнию
   lightningIndex = Math.floor(Math.random() * 9);
   showLightning(lightningIndex);
 
   setTimeout(() => {
     const cells = document.querySelectorAll('.cell');
-
-    // подсветка ячейки с молнией
     cells[lightningIndex].classList.add('molnia');
-
-    // подсветка выбранной ячейки
     if (selectedCellIndex !== null) {
       cells[selectedCellIndex].classList.add('active');
     }
-
     if (lightningIndex === selectedCellIndex) {
       // выигрыш
       resultDiv.textContent = 'Вы выиграли!';
-      userBalance += bet * 3; // умножение x3
+      userBalance += bet * 3;
     } else {
       // проигрыш
       resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
     }
-
     updateBalanceDisplay(userBalance);
     currentUser.balance = userBalance;
     saveUserBalance();
 
-    // очистка
     document.querySelectorAll('.cell').forEach(c => {
       c.classList.remove('active', 'molnia');
     });
