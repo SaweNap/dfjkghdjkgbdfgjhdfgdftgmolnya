@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Игры: Баланс и Молния</title>
 <style>
-  /* ... ваш CSS без изменений ... */
+  /* ... Ваш CSS без изменений ... */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
@@ -193,7 +193,6 @@ let currentUser = null;
 let selectedCellIndex = null;
 let lightningIndex = null;
 let gameInProgress = false;
-let autoStart = false; // флаг для автоматического старта после выбора ячейки
 
 // Создаем ячейки
 for (let i = 0; i < 9; i++) {
@@ -205,10 +204,6 @@ for (let i = 0; i < 9; i++) {
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
-    if (autoStart) {
-      startGame(parseFloat(betInput.value));
-      autoStart = false; // сброс
-    }
   };
   gameContainer.appendChild(cell);
 }
@@ -249,6 +244,7 @@ function checkButtonState() {
   }
 }
 
+// Обработчик кнопки "Начать игру"
 document.getElementById('start-game-btn').onclick = () => {
   if (!currentUser) {
     alert('Пользователь не загружен');
@@ -263,10 +259,10 @@ document.getElementById('start-game-btn').onclick = () => {
     alert('Баланс недостаточен!');
     return;
   }
-  autoStart = true; // чтобы игра стартовала сразу после выбора
   startGame(bet);
 };
 
+// Основная функция игры
 async function startGame(bet) {
   if (selectedCellIndex === null) {
     alert('Пожалуйста, выберите ячейку');
@@ -356,7 +352,7 @@ styleSheet.insertRule(`
 }
 `, styleSheet.cssRules.length);
 
-// загрузка и сохранение
+// Загрузка и сохранение
 async function loadUsers() {
   const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
   const response = await fetch(url);
