@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Игры: Баланс и Молния</title>
 <style>
-  /* ... ваш CSS без изменений ... */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
@@ -193,8 +192,6 @@ let currentUser = null;
 let selectedCellIndex = null;
 let lightningIndex = null;
 let gameInProgress = false;
-let autoStart = false; // флаг для автоматического старта после выбора ячейки
-let currentBet = 0; // текущая ставка
 
 // Создаем ячейки
 for (let i = 0; i < 9; i++) {
@@ -203,34 +200,30 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
-    if (gameInProgress) return; // чтобы не мешать
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
-    if (autoStart) {
-      startGame(currentBet);
-      autoStart = false; // сброс
-    }
   };
   gameContainer.appendChild(cell);
 }
 
 // Загрузка данных и инициализация
-(async () => {
+(function() {
   const urlParams = new URLSearchParams(window.location.search);
   userId = urlParams.get('id');
   if (userId) {
-    await loadUsers();
-    currentUser = users.find(u => u.id.toString() === userId.toString());
-    if (currentUser) {
-      userBalance = currentUser.balance || 0;
-      updateBalanceDisplay(userBalance);
-      checkButtonState();
-    } else {
-      updateBalanceDisplay(0);
-      checkButtonState();
-      messageEl.textContent = 'Пользователь не найден!';
-    }
+    loadUsers().then(() => {
+      currentUser = users.find(u => u.id.toString() === userId.toString());
+      if (currentUser) {
+        userBalance = currentUser.balance || 0;
+        updateBalanceDisplay(userBalance);
+        checkButtonState();
+      } else {
+        updateBalanceDisplay(0);
+        checkButtonState();
+        messageEl.textContent = 'Пользователь не найден!';
+      }
+    });
   } else {
     updateBalanceDisplay(0);
     checkButtonState();
@@ -241,6 +234,7 @@ for (let i = 0; i < 9; i++) {
 function updateBalanceDisplay(balance) {
   document.getElementById('balanceDisplay').textContent = 'Баланс: ' + balance + ' ₽';
 }
+
 function checkButtonState() {
   startGameBtn.disabled = !(userBalance > 0 && currentUser);
   if (userBalance <= 0 || !currentUser) {
@@ -264,8 +258,6 @@ document.getElementById('start-game-btn').onclick = () => {
     alert('Баланс недостаточен!');
     return;
   }
-  currentBet = bet; // сохраняем текущую ставку
-  autoStart = false; // отключаем автоматический старт
   startGame(bet);
 };
 
@@ -286,7 +278,6 @@ async function startGame(bet) {
   lightningIndex = Math.floor(Math.random() * 9);
   showLightning(lightningIndex);
 
-  // Ждем, чтобы показать молнию
   setTimeout(() => {
     const cells = document.querySelectorAll('.cell');
 
@@ -301,7 +292,7 @@ async function startGame(bet) {
     if (lightningIndex === selectedCellIndex) {
       // выигрыш
       resultDiv.textContent = 'Вы выиграли!';
-      userBalance += bet * 3; // x3
+      userBalance += bet * 3; // умножение x3
     } else {
       // проигрыш
       resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
@@ -368,6 +359,7 @@ async function loadUsers() {
     users = [];
   }
 }
+
 async function saveUserBalance() {
   await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
@@ -378,6 +370,7 @@ async function saveUserBalance() {
   }
   await updateUsersOnGitHub();
 }
+
 async function updateUsersOnGitHub() {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}`;
   const getRes = await fetch(url, {
