@@ -7,7 +7,6 @@
 <style>
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    /* Добавлен фоновый рисунок, покрывающий весь экран */
     background-image: url('https://github.com/SaweNap/dfjkghdjkgbdfgjhdfgdftgmolnya/raw/main/fon.jpg');
     background-size: cover;
     background-position: center;
@@ -63,15 +62,12 @@
   .cell.active {
     outline: 3px solid yellow;
   }
-  /* подсветка ячейки с молнией */
   .cell.molnia {
     outline: 3px solid red;
   }
-
-  /* Расширенная маленькая молния внутри ячейки */
   .lightning {
     position: absolute;
-    width: 40px; /* увеличена ширина */
+    width: 40px;
     height: 50px;
     background: linear-gradient(135deg, #ffff00, #ffcc00);
     clip-path: polygon(50% 0%, 60% 20%, 80% 20%, 55% 50%, 70% 50%, 30% 100%, 45% 50%, 20% 50%, 45% 0%);
@@ -82,8 +78,6 @@
     transform: translateX(-50%);
     z-index: 10;
   }
-
-  /* Анимация мерцания молнии */
   @keyframes lightning-flicker {
     0%, 100% { opacity: 1; filter: brightness(1); }
     50% { opacity: 0.4; filter: brightness(2); }
@@ -109,13 +103,11 @@
     box-shadow: 0 8px 15px rgba(0,0,0,0.3);
     transition: all 0.3s ease, transform 0.2s;
   }
-
   #start-game-btn:hover {
     background: linear-gradient(135deg, #00eaff, #0072d3);
     transform: scale(1.05);
     box-shadow: 0 12px 20px rgba(0,0,0,0.4);
   }
-
   #start-game-btn:active {
     transform: scale(0.98);
   }
@@ -139,7 +131,6 @@
     min-height: 20px;
   }
 
-  /* Общее сообщение поверх всего */
   #overlayMessage {
     position: fixed;
     top: 0;
@@ -176,7 +167,7 @@
 <div id="lightning-effect"></div>
 
 <script>
-const GITHUB_TOKEN = 'ваш токен'; // вставьте сюда свой токен
+const GITHUB_TOKEN = 'ВАШ_ТОКЕН_ЗДЕСЬ'; // вставьте сюда свой токен
 const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
 const FILE_PATH = 'users.json';
 
@@ -203,11 +194,11 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
+    if (gameInProgress) return; // чтобы не мешать во время игры
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
   };
-  // добавим в каждую ячейку маленькую молнию только при победе
   gameContainer.appendChild(cell);
 }
 
@@ -278,7 +269,6 @@ async function startGame(bet) {
   document.querySelectorAll('.cell').forEach(c => {
     c.classList.remove('active', 'molnia');
     c.style.outline = '';
-    // Удаляем все маленькие молнии внутри ячейки
     const lightningElems = c.querySelectorAll('.lightning');
     lightningElems.forEach(le => le.remove());
   });
@@ -287,7 +277,7 @@ async function startGame(bet) {
   lightningIndex = Math.floor(Math.random() * 9);
   showLightning(lightningIndex);
 
-  setTimeout(() => {
+  setTimeout(async () => {
     const cells = document.querySelectorAll('.cell');
 
     // подсветка ячейки с молнией
@@ -307,11 +297,12 @@ async function startGame(bet) {
       resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
     }
 
-    updateBalanceDisplay(userBalance);
+    // Обновляем баланс и сохраняем
     currentUser.balance = userBalance;
-    saveUserBalance();
+    await saveUserBalance();
 
-    // очистка
+    updateBalanceDisplay(userBalance);
+    // очищаем ячейки
     document.querySelectorAll('.cell').forEach(c => {
       c.classList.remove('active', 'molnia');
       const lightningElems = c.querySelectorAll('.lightning');
@@ -327,12 +318,11 @@ function showLightning(index) {
   if (cells[index]) {
     const bolt = document.createElement('div');
     bolt.className = 'lightning';
-    // Вставляем только в выбранную ячейку
     cells[index].appendChild(bolt);
   }
 }
 
-// загрузка и сохранение
+// Загрузка пользователей
 async function loadUsers() {
   const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
   const response = await fetch(url);
@@ -343,6 +333,7 @@ async function loadUsers() {
   }
 }
 
+// Сохранение баланса
 async function saveUserBalance() {
   await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
@@ -354,6 +345,7 @@ async function saveUserBalance() {
   await updateUsersOnGitHub();
 }
 
+// Обновление файла на GitHub
 async function updateUsersOnGitHub() {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}`;
   const getRes = await fetch(url, {
