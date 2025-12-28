@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Игры: Баланс и Молния</title>
 <style>
+  /* ... ваш CSS без изменений ... */
   body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
@@ -192,6 +193,7 @@ let currentUser = null;
 let selectedCellIndex = null;
 let lightningIndex = null;
 let gameInProgress = false;
+let autoStart = false; // флаг для автоматического старта после выбора ячейки
 
 // Создаем ячейки
 for (let i = 0; i < 9; i++) {
@@ -203,27 +205,30 @@ for (let i = 0; i < 9; i++) {
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
+    if (autoStart) {
+      startGame(parseFloat(betInput.value));
+      autoStart = false; // сброс
+    }
   };
   gameContainer.appendChild(cell);
 }
 
 // Загрузка данных и инициализация
-(function() {
+(async () => {
   const urlParams = new URLSearchParams(window.location.search);
   userId = urlParams.get('id');
   if (userId) {
-    loadUsers().then(() => {
-      currentUser = users.find(u => u.id.toString() === userId.toString());
-      if (currentUser) {
-        userBalance = currentUser.balance || 0;
-        updateBalanceDisplay(userBalance);
-        checkButtonState();
-      } else {
-        updateBalanceDisplay(0);
-        checkButtonState();
-        messageEl.textContent = 'Пользователь не найден!';
-      }
-    });
+    await loadUsers();
+    currentUser = users.find(u => u.id.toString() === userId.toString());
+    if (currentUser) {
+      userBalance = currentUser.balance || 0;
+      updateBalanceDisplay(userBalance);
+      checkButtonState();
+    } else {
+      updateBalanceDisplay(0);
+      checkButtonState();
+      messageEl.textContent = 'Пользователь не найден!';
+    }
   } else {
     updateBalanceDisplay(0);
     checkButtonState();
@@ -258,6 +263,7 @@ document.getElementById('start-game-btn').onclick = () => {
     alert('Баланс недостаточен!');
     return;
   }
+  autoStart = true; // чтобы игра стартовала сразу после выбора
   startGame(bet);
 };
 
@@ -278,6 +284,7 @@ async function startGame(bet) {
   lightningIndex = Math.floor(Math.random() * 9);
   showLightning(lightningIndex);
 
+  // Ждем немного, чтобы показать молнию
   setTimeout(() => {
     const cells = document.querySelectorAll('.cell');
 
@@ -359,7 +366,6 @@ async function loadUsers() {
     users = [];
   }
 }
-
 async function saveUserBalance() {
   await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
@@ -370,7 +376,6 @@ async function saveUserBalance() {
   }
   await updateUsersOnGitHub();
 }
-
 async function updateUsersOnGitHub() {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}`;
   const getRes = await fetch(url, {
