@@ -167,17 +167,16 @@
 <div id="lightning-effect"></div>
 
 <script>
-// --- НАСТРОЙКИ ---
-const GITHUB_TOKEN = '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'; // вставьте свой токен
-const GITHUB_REPO = 'OWNER/REPO'; // например: 'SaweNap/dfjghdfifgJSON'
+const GITHUB_TOKEN = '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'; // ваш токен
+const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
 const FILE_PATH = 'users.json'; // путь внутри репозитория
 
-// --- Переменные ---
 const balanceDisplay = document.getElementById('balanceDisplay');
 const messageEl = document.getElementById('message');
 const betInput = document.getElementById('bet-input');
 const startGameBtn = document.getElementById('start-game-btn');
 const gameContainer = document.getElementById('game-container');
+const lightningDiv = document.getElementById('lightning-effect');
 const resultDiv = document.getElementById('result');
 
 let userId = null;
@@ -195,7 +194,7 @@ for (let i = 0; i < 9; i++) {
   cell.textContent = i + 1;
   cell.dataset.index = i;
   cell.onclick = () => {
-    if (gameInProgress) return;
+    if (gameInProgress) return; // чтобы не мешать во время игры
     document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
     cell.classList.add('active');
     selectedCellIndex = i;
@@ -205,12 +204,9 @@ for (let i = 0; i < 9; i++) {
 
 // Инициализация
 (async () => {
-  // Получаем id из URL или задаем "test"
   const params = new URLSearchParams(window.location.search);
   userId = params.get('id') || 'test';
-
   await loadUsers();
-
   currentUser = users.find(u => u.id.toString() === userId.toString());
   if (currentUser) {
     userBalance = currentUser.balance || 0;
@@ -245,7 +241,6 @@ function showOverlayMessage(text) {
   }, 2000);
 }
 
-// Обработка кнопки "Начать игру"
 document.getElementById('start-game-btn').onclick = () => {
   if (!currentUser) {
     showOverlayMessage('Пользователь не загружен');
@@ -263,7 +258,6 @@ document.getElementById('start-game-btn').onclick = () => {
   startGame(bet);
 };
 
-// Запуск игры
 async function startGame(bet) {
   if (selectedCellIndex === null) {
     showOverlayMessage('Пожалуйста, выберите ячейку');
@@ -328,7 +322,7 @@ function showLightning(index) {
   }
 }
 
-// Загрузка пользователей через API GitHub
+// Загрузка пользователей
 async function loadUsers() {
   const url = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}`;
   const response = await fetch(url, {
@@ -338,17 +332,16 @@ async function loadUsers() {
     }
   });
   if (response.ok) {
-    const data = await response.json();
-    const content = atob(data.content);
-    users = JSON.parse(content);
+    users = await response.json();
   } else {
     users = [];
+    showOverlayMessage('Ошибка загрузки файла пользователей');
   }
 }
 
-// Сохранение баланса на GitHub
+// Сохранение баланса
 async function saveUserBalance() {
-  await loadUsers(); // подгружаем актуальный файл
+  await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
   if (idx >= 0) {
     users[idx].balance = userBalance;
@@ -367,8 +360,12 @@ async function updateUsersOnGitHub() {
       'Accept': 'application/vnd.github.v3+json'
     }
   });
-  if (!getRes.ok) { showOverlayMessage('Ошибка получения файла'); return; }
-  const sha = (await getRes.json()).sha;
+  if (!getRes.ok) { 
+    showOverlayMessage('Ошибка получения файла для обновления'); 
+    return; 
+  }
+  const json = await getRes.json();
+  const sha = json.sha; // SHA текущего файла
   const contentBase64 = btoa(JSON.stringify(users, null, 2));
   const payload = {
     message: 'Обновление баланса пользователя',
