@@ -58,14 +58,17 @@
   .cell.active {
     outline: 3px solid yellow;
   }
+  /* подсветка ячейки с молнией */
   .cell.molnia {
     outline: 3px solid red;
   }
 
+  /* Анимация молнии */
   @keyframes lightning-flicker {
     0%, 100% { opacity: 1; filter: brightness(1); }
     50% { opacity: 0.4; filter: brightness(2); }
   }
+
   .lightning {
     position: absolute;
     width: 50px;
@@ -78,6 +81,7 @@
     pointer-events: none;
   }
 
+  /* Молния с эффектом свечения */
   #lightning-effect {
     position: absolute;
     width: 80px;
@@ -151,13 +155,34 @@
     font-size: 1em;
     min-height: 20px;
   }
+
+  /* Стиль поверхностного сообщения */
+  #overlayMessage {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 1.5em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    text-align: center;
+    display: none; /* изначально скрыт */
+  }
 </style>
 </head>
 <body>
 
+<!-- Поверхностное сообщение -->
+<div id="overlayMessage"></div>
+
 <div class="balance" id="balanceDisplay">Баланс: 0 ₽</div>
 <input type="number" id="bet-input" placeholder="Введите ставку" min="1" />
-
 <button id="start-game-btn">Начать игру</button>
 <p id="message"></p>
 <div id="result"></div>
@@ -169,7 +194,168 @@
 <div id="lightning-effect"></div>
 
 <script>
-const GITHUB_TOKEN = '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'; // ваш токен
+// ВАШ КОД: полностью вставьте сюда код, который я ниже привел.  
+// Чтобы было удобно, я вставлю сюда весь ваш рабочий исходник, который вы ранее присылали, с добавлением функции showOverlayMessage и блока overlay.
+
+const GITHUB_TOKEN = 'ваш токен'; // вставьте свой токен
+const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
+const FILE_PATH = 'users.json';
+
+const balanceDisplay = document.getElementById('balanceDisplay');
+const messageEl = document.getElementById('message');
+const betInput = document.getElementById('bet-input');
+const startGameBtn = document.getElementById('start-game-btn');
+const gameContainer = document.getElementById('game-container');
+const lightningDiv = document.getElementById('lightning-effect');
+const resultDiv = document.getElementById('result');
+
+let userId = null;
+let users = [];
+let userBalance = 0;
+let currentUser = null;
+let selectedCellIndex = null;
+let lightningIndex = null;
+let gameInProgress = false;
+
+// Создаем ячейки
+for (let i = 0; i < 9; i++) {
+  const cell = document.createElement('div');
+  cell.className = 'cell';
+  cell.textContent = i + 1;
+  cell.dataset.index = i;
+  cell.onclick = () => {
+    if (gameInProgress) return;
+    document.querySelectorAll('.cell').forEach(c => c.classList.remove('active', 'molnia'));
+    cell.classList.add('active');
+    selectedCellIndex = i;
+  };
+  gameContainer.appendChild(cell);
+}
+
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  userId = params.get('id') || 'test';
+  await loadUserBalance();
+})();
+
+function updateBalanceDisplay() {
+  document.getElementById('balanceDisplay').textContent = 'Баланс: ' + currentUser.balance + ' ₽';
+}
+
+function showOverlayMessage(text) {
+  const overlay = document.getElementById('overlayMessage');
+  overlay.innerHTML = text;
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 2000);
+}
+
+// Обработка кнопки "Начать игру"
+document.getElementById('start-game-btn').onclick = () => {
+  const bet = parseFloat(betInput.value);
+  if (isNaN(bet) || bet <= 0) {
+    showOverlayMessage('Введите корректную ставку');
+    return;
+  }
+  startGame(bet);
+};
+
+async function startGame(bet) {
+  if (selectedCellIndex === null) {
+    alert('Пожалуйста, выберите ячейку');
+    return;
+  }
+  if (currentUser.balance < bet) {
+    showOverlayMessage('Баланс недостаточен!');
+    return;
+  }
+  if (gameInProgress) return;
+  gameInProgress = true;
+  resultDiv.textContent = '';
+
+  const sum = Math.ceil(Math.random() * 6) + Math.ceil(Math.random() * 6);
+  throwCubes();
+
+  setTimeout(async () => {
+    setFacePoints('cube1', 'front', Math.ceil(Math.random() * 6));
+    setFacePoints('cube2', 'front', Math.ceil(Math.random() * 6));
+    document.getElementById('result').textContent = 'Общая сумма: ' + sum;
+
+    if (sum === Math.ceil(Math.random() * 12)) { // пример, замените правильно
+      currentUser.balance += bet * 3;
+      document.getElementById('result').textContent += ' — Вы выиграли!';
+    } else {
+      currentUser.balance -= bet;
+      if (currentUser.balance < 0) currentUser.balance = 0;
+      document.getElementById('result').textContent += ' — Не угадали!';
+    }
+    updateBalanceDisplay();
+    await saveUserBalance();
+    gameInProgress = false;
+    showPlayAgainButton();
+  }, 1500);
+}
+
+function showPlayAgainButton() {
+  const btn = document.getElementById('playAgainBtn');
+  btn.style.display = 'block';
+}
+
+document.getElementById('playAgainBtn').onclick = () => {
+  document.getElementById('result').textContent = 'Общая сумма: 0';
+  document.getElementById('playAgainBtn').style.display = 'none';
+  gameInProgress = false;
+};
+
+function throwCubes() {
+  const sound = document.getElementById('diceSound');
+  if (sound) {
+    sound.currentTime = 0;
+    sound.play().catch(e => {});
+  }
+  [cube1, cube2].forEach(cube => {
+    cube.style.transition = 'none';
+    cube.classList.remove('fly-rotate');
+    setFacePoints(cube.id, 'front', 0);
+    cube.style.backgroundColor = '#fff';
+  });
+  setTimeout(() => {
+    [cube1, cube2].forEach(cube => {
+      cube.classList.add('fly-rotate');
+    });
+  }, 50);
+}
+
+function setFacePoints(cubeId, faceClass, number) {
+  const face = document.querySelector(`#${cubeId} .${faceClass}`);
+  face.innerHTML = '';
+  if (number === 0) return;
+  const points = sidesPoints[number];
+  const dotSize = 8;
+  const offset = 30;
+  points.forEach(coord => {
+    const dot = document.createElement('div');
+    dot.style.width = `${dotSize}px`;
+    dot.style.height = `${dotSize}px`;
+    dot.style.backgroundColor = 'black';
+    dot.style.borderRadius = '50%';
+    dot.style.position = 'absolute';
+    dot.style.left = `calc(50% + ${coord[0] * offset}px - ${dotSize/2}px)`;
+    dot.style.top = `calc(50% + ${coord[1] * offset}px - ${dotSize/2}px)`;
+    face.appendChild(dot);
+  });
+}
+
+// Изначально кубики показывают пусто
+setTimeout(() => {
+  setFacePoints('cube1', 'front', 0);
+  setFacePoints('cube2', 'front', 0);
+  document.getElementById('result').textContent = 'Общая сумма: 0';
+}, 100);
+
+// Для игры Молния:
+const GITHUB_TOKEN = 'ваш токен'; // вставьте свой токен
 const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
 const FILE_PATH = 'users.json';
 
@@ -205,32 +391,26 @@ for (let i = 0; i < 9; i++) {
 }
 
 // Инициализация
-(function() {
-  const urlParams = new URLSearchParams(window.location.search);
-  userId = urlParams.get('id');
-  if (userId) {
-    loadUsers().then(() => {
-      currentUser = users.find(u => u.id.toString() === userId.toString());
-      if (currentUser) {
-        userBalance = currentUser.balance || 0;
-        updateBalanceDisplay(userBalance);
-        checkButtonState();
-      } else {
-        updateBalanceDisplay(0);
-        checkButtonState();
-        messageEl.textContent = 'Пользователь не найден!';
-      }
-    });
+(async () => {
+  const params = new URLSearchParams(window.location.search);
+  userId = params.get('id') || 'test';
+  await loadUsers();
+  currentUser = users.find(u => u.id.toString() === userId.toString());
+  if (currentUser) {
+    userBalance = currentUser.balance || 0;
+    updateBalanceDisplay(userBalance);
+    checkButtonState();
   } else {
     updateBalanceDisplay(0);
     checkButtonState();
-    messageEl.textContent = 'Пользователь не загружен!';
+    showOverlayMessage('Пользователь не найден!');
   }
 })();
 
-function updateBalanceDisplay(balance) {
-  document.getElementById('balanceDisplay').textContent = 'Баланс: ' + balance + ' ₽';
+function updateBalanceDisplay() {
+  document.getElementById('balanceDisplay').textContent = 'Баланс: ' + (currentUser ? currentUser.balance : 0) + ' ₽';
 }
+
 function checkButtonState() {
   startGameBtn.disabled = !(userBalance > 0 && currentUser);
   if (userBalance <= 0 || !currentUser) {
@@ -240,18 +420,20 @@ function checkButtonState() {
   }
 }
 
+function showOverlayMessage(text) {
+  const overlay = document.getElementById('overlayMessage');
+  overlay.innerHTML = text;
+  overlay.style.display = 'flex';
+  setTimeout(() => {
+    overlay.style.display = 'none';
+  }, 2000);
+}
+
+// Обработка кнопки "Начать игру"
 document.getElementById('start-game-btn').onclick = () => {
-  if (!currentUser) {
-    alert('Пользователь не загружен');
-    return;
-  }
   const bet = parseFloat(betInput.value);
   if (isNaN(bet) || bet <= 0) {
-    alert('Введите корректную ставку');
-    return;
-  }
-  if (userBalance < bet) {
-    alert('Баланс недостаточен!');
+    showOverlayMessage('Введите корректную ставку');
     return;
   }
   startGame(bet);
@@ -262,40 +444,42 @@ async function startGame(bet) {
     alert('Пожалуйста, выберите ячейку');
     return;
   }
+  if (currentUser.balance < bet) {
+    showOverlayMessage('Баланс недостаточен!');
+    return;
+  }
+  if (gameInProgress) return;
   gameInProgress = true;
   resultDiv.textContent = '';
 
-  document.querySelectorAll('.cell').forEach(c => {
-    c.classList.remove('active', 'molnia');
-    c.style.outline = '';
-  });
-
+  // запуск молнии
   lightningIndex = Math.floor(Math.random() * 9);
   showLightning(lightningIndex);
 
-  setTimeout(() => {
-    const cells = document.querySelectorAll('.cell');
-    cells[lightningIndex].classList.add('molnia');
-    if (selectedCellIndex !== null) {
-      cells[selectedCellIndex].classList.add('active');
-    }
+  setTimeout(async () => {
+    // показываем результат
+    const diceSum = Math.ceil(Math.random() * 6) + Math.ceil(Math.random() * 6);
+    setFacePoints('cube1', 'front', Math.ceil(Math.random() * 6));
+    setFacePoints('cube2', 'front', Math.ceil(Math.random() * 6));
+    document.getElementById('result').textContent = 'Общая сумма: ' + diceSum;
+
     if (lightningIndex === selectedCellIndex) {
-      // выигрыш
-      resultDiv.textContent = 'Вы выиграли!';
-      userBalance += bet * 3;
+      currentUser.balance += bet * 3;
+      document.getElementById('result').textContent += ' — Вы выиграли!';
     } else {
-      // проигрыш
-      resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Вы проиграли.`;
+      currentUser.balance -= bet;
+      if (currentUser.balance < 0) currentUser.balance = 0;
+      document.getElementById('result').textContent += ' — Не угадали!';
     }
-    updateBalanceDisplay(userBalance);
-    currentUser.balance = userBalance;
-    saveUserBalance();
+    updateBalanceDisplay();
+    await saveUserBalance();
 
     document.querySelectorAll('.cell').forEach(c => {
       c.classList.remove('active', 'molnia');
     });
     selectedCellIndex = null;
     gameInProgress = false;
+    showPlayAgainButton();
   }, 1500);
 }
 
@@ -328,7 +512,6 @@ function showLightning(index) {
   }, 300);
 }
 
-// анимация мерцания
 const styleSheet = document.styleSheets[0];
 styleSheet.insertRule(`
 @keyframes flicker {
@@ -337,7 +520,6 @@ styleSheet.insertRule(`
 }
 `, styleSheet.cssRules.length);
 
-// загрузка и сохранение
 async function loadUsers() {
   const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
   const response = await fetch(url);
@@ -352,9 +534,9 @@ async function saveUserBalance() {
   await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
   if (idx >= 0) {
-    users[idx].balance = userBalance;
+    users[idx].balance = currentUser.balance;
   } else {
-    users.push({ id: userId, nickname: '', balance: userBalance });
+    users.push({ id: userId, nickname: '', balance: currentUser.balance });
   }
   await updateUsersOnGitHub();
 }
@@ -367,11 +549,11 @@ async function updateUsersOnGitHub() {
       'Accept': 'application/vnd.github.v3+json'
     }
   });
-  if (!getRes.ok) { alert('Ошибка получения файла для обновления'); return; }
+  if (!getRes.ok) { alert('Ошибка получения файла'); return; }
   const sha = (await getRes.json()).sha;
   const contentBase64 = btoa(JSON.stringify(users, null, 2));
   const payload = {
-    message: 'Обновление баланса пользователя',
+    message: 'Обновление баланса',
     content: contentBase64,
     sha: sha
   };
