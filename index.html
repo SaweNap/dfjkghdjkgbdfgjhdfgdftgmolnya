@@ -169,7 +169,7 @@
 <script>
 const GITHUB_TOKEN = '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'; // вставьте сюда свой токен
 const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
-const FILE_PATH = 'users.json';
+const FILE_PATH = 'https://raw.githubusercontent.com/SaweNap/dfjghdfifgJSON/main/users.json'; // <-- правильная ссылка
 
 const balanceDisplay = document.getElementById('balanceDisplay');
 const messageEl = document.getElementById('message');
@@ -324,7 +324,7 @@ function showLightning(index) {
 
 // Загрузка пользователей
 async function loadUsers() {
-  const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
+  const url = FILE_PATH;
   const response = await fetch(url);
   if (response.ok) {
     users = await response.json();
