@@ -49,6 +49,7 @@
     cursor: pointer;
     box-shadow: 0 4px 8px rgba(0,0,0,0.3);
     transition: transform 0.2s, background 0.3s, box-shadow 0.3s, outline 0.2s;
+    position: relative;
   }
   .cell:hover {
     background: #777;
@@ -63,47 +64,25 @@
     outline: 3px solid red;
   }
 
-  /* Анимация молнии */
-  @keyframes lightning-flicker {
-    0%, 100% { opacity: 1; filter: brightness(1); }
-    50% { opacity: 0.4; filter: brightness(2); }
-  }
-
+  /* Маленькая молния внутри ячейки */
   .lightning {
     position: absolute;
-    width: 50px;
-    height: 150px;
+    width: 20px;
+    height: 50px;
     background: linear-gradient(135deg, #ffff00, #ffcc00);
     clip-path: polygon(50% 0%, 60% 20%, 80% 20%, 55% 50%, 70% 50%, 30% 100%, 45% 50%, 20% 50%, 45% 0%);
     opacity: 1;
     animation: lightning-flicker 0.15s infinite;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  /* Молния с эффектом свечения */
-  #lightning-effect {
-    position: absolute;
-    width: 80px;
-    height: 300px;
-    top: 0;
+    top: 10px;
     left: 50%;
     transform: translateX(-50%);
-    background: transparent;
-    pointer-events: none;
-    display: none;
-    z-index: 9;
+    z-index: 10;
   }
 
-  #lightning-effect.show {
-    display: block;
-    animation: lightning-shine 0.2s forwards;
-  }
-
-  @keyframes lightning-shine {
-    0% { opacity: 0; filter: blur(4px); }
-    50% { opacity: 1; filter: blur(2px); }
-    100% { opacity: 0; filter: blur(0); }
+  /* Анимация мерцания молнии */
+  @keyframes lightning-flicker {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.4; filter: brightness(2); }
   }
 
   #result {
@@ -295,6 +274,9 @@ async function startGame(bet) {
   document.querySelectorAll('.cell').forEach(c => {
     c.classList.remove('active', 'molnia');
     c.style.outline = '';
+    // Удаляем все маленькие молнии внутри ячейки
+    const lightningElems = c.querySelectorAll('.lightning');
+    lightningElems.forEach(le => le.remove());
   });
 
   // выбираем молнию
@@ -328,6 +310,8 @@ async function startGame(bet) {
     // очистка
     document.querySelectorAll('.cell').forEach(c => {
       c.classList.remove('active', 'molnia');
+      const lightningElems = c.querySelectorAll('.lightning');
+      lightningElems.forEach(le => le.remove());
     });
     selectedCellIndex = null;
     gameInProgress = false;
@@ -335,63 +319,14 @@ async function startGame(bet) {
 }
 
 function showLightning(index) {
-  lightningDiv.innerHTML = '';
-  lightningDiv.style.display = 'block';
-
-  const lightning = document.createElement('div');
-  lightning.className = 'lightning';
-
-  for (let i = 0; i < 3; i++) {
-    const flicker = document.createElement('div');
-    flicker.style.position = 'absolute';
-    flicker.style.width = '100%';
-    flicker.style.height = '100%';
-    flicker.style.background = 'linear-gradient(135deg, #ffff00, #ffcc00)';
-    flicker.style.mixBlendMode = 'screen';
-    flicker.style.opacity = Math.random() * 0.8 + 0.2;
-    flicker.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
-    flicker.style.filter = `blur(${Math.random() * 2 + 1}px)`;
-    lightning.appendChild(flicker);
+  const cells = document.querySelectorAll('.cell');
+  if (cells[index]) {
+    const bolt = document.createElement('div');
+    bolt.className = 'lightning';
+    // Вставляем в ячейку маленькую молнию
+    cells[index].appendChild(bolt);
   }
-
-  lightningDiv.appendChild(lightning);
-  lightning.style.animation = 'flicker 0.2s infinite';
-
-  setTimeout(() => {
-    // Бьет в ту ячейку, где была молния
-    const cells = document.querySelectorAll('.cell');
-    // добавляем эффект молнии именно в нужную ячейку
-    if (cells[index]) {
-      // вставляем в ячейку элемент молнии
-      const bolt = document.createElement('div');
-      bolt.className = 'lightning';
-      bolt.style.position = 'absolute';
-      bolt.style.top = '0';
-      bolt.style.left = '0';
-      bolt.style.width = '100%';
-      bolt.style.height = '100%';
-      bolt.style.background = 'linear-gradient(135deg, #ffff00, #ffcc00)';
-      bolt.style.clipPath = 'polygon(50% 0%, 60% 20%, 80% 20%, 55% 50%, 70% 50%, 30% 100%, 45% 50%, 20% 50%, 45% 0%)';
-      bolt.style.opacity = '1';
-      bolt.style.animation = 'flicker 0.2s forwards';
-      // очистить все ячейки от молний перед этим
-      document.querySelectorAll('.cell').forEach(c => c.classList.remove('molnia'));
-      // добавляем молнию в выбранную ячейку
-      cells[index].appendChild(bolt);
-    }
-    lightningDiv.style.display = 'none';
-    lightning.innerHTML = '';
-  }, 300);
 }
-
-// анимация мерцания
-const styleSheet = document.styleSheets[0];
-styleSheet.insertRule(`
-@keyframes flicker {
-  0%, 100% { opacity: 1; filter: brightness(1); }
-  50% { opacity: 0.4; filter: brightness(2); }
-}
-`, styleSheet.cssRules.length);
 
 // загрузка и сохранение
 async function loadUsers() {
@@ -442,3 +377,4 @@ async function updateUsersOnGitHub() {
 }
 </script>
 </body>
+</html>
