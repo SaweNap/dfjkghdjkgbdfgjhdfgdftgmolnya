@@ -6,7 +6,7 @@
 <title>Игры: Баланс и Молния</title>
 <style>
   body {
-    font-family: Arial, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #1e3c72, #2a5298);
     color: #fff;
     margin: 0;
@@ -17,11 +17,14 @@
     font-size: 1.5em;
     margin-bottom: 20px;
     text-shadow: 1px 1px 2px #000;
+    text-align: center;
   }
 
-  /* Стиль для игры Молния */
   h1 {
     margin-bottom: 10px;
+    font-size: 2em;
+    text-align: center;
+    text-shadow: 1px 1px 3px #000;
   }
 
   #game-container {
@@ -30,6 +33,7 @@
     flex-wrap: wrap;
     max-width: 600px;
     margin: 0 auto 30px;
+    position: relative;
   }
 
   .cell {
@@ -37,33 +41,113 @@
     height: 100px;
     margin: 10px;
     background: #555;
-    border-radius: 10px;
+    border-radius: 15px;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 24px;
     cursor: pointer;
-    transition: background 0.3s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: transform 0.2s, background 0.3s, box-shadow 0.3s;
   }
 
   .cell:hover {
     background: #777;
+    transform: scale(1.05);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.4);
   }
 
-  .active {
-    background: yellow;
+  /* Анимация молнии */
+  @keyframes lightning-flicker {
+    0%, 100% { opacity: 1; filter: brightness(1); }
+    50% { opacity: 0.4; filter: brightness(2); }
+  }
+
+  .lightning {
+    position: absolute;
+    width: 50px;
+    height: 150px;
+    background: linear-gradient(135deg, #ffff00, #ffcc00);
+    clip-path: polygon(50% 0%, 60% 20%, 80% 20%, 55% 50%, 70% 50%, 30% 100%, 45% 50%, 20% 50%, 45% 0%);
+    opacity: 1;
+    animation: lightning-flicker 0.15s infinite;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* Молния с эффектом свечения */
+  #lightning-effect {
+    position: absolute;
+    width: 80px;
+    height: 300px;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    background: transparent;
+    pointer-events: none;
+    display: none;
+    z-index: 9;
+  }
+
+  #lightning-effect.show {
+    display: block;
+    animation: lightning-shine 0.2s forwards;
+  }
+
+  @keyframes lightning-shine {
+    0% { opacity: 0; filter: blur(4px); }
+    50% { opacity: 1; filter: blur(2px); }
+    100% { opacity: 0; filter: blur(0); }
   }
 
   #result {
     margin-top: 20px;
-    font-size: 20px;
+    font-size: 1.4em;
+    text-align: center;
+    min-height: 40px;
   }
 
-  #play-btn, #start-game-btn {
-    margin-top: 20px;
-    padding: 10px 20px;
-    font-size: 18px;
+  #start-game-btn {
+    display: block;
+    margin: 20px auto;
+    padding: 15px 40px;
+    font-size: 1.2em;
+    background: linear-gradient(135deg, #00c3ff, #005aa7);
+    border: none;
+    border-radius: 25px;
+    color: #fff;
     cursor: pointer;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.3);
+    transition: all 0.3s ease, transform 0.2s;
+  }
+
+  #start-game-btn:hover {
+    background: linear-gradient(135deg, #00eaff, #0072d3);
+    transform: scale(1.05);
+    box-shadow: 0 12px 20px rgba(0,0,0,0.4);
+  }
+
+  #start-game-btn:active {
+    transform: scale(0.98);
+  }
+
+  #bet-input {
+    display: block;
+    margin: 0 auto 10px;
+    padding: 12px 20px;
+    font-size: 1.2em;
+    border-radius: 20px;
+    border: none;
+    outline: none;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    width: 200px;
+  }
+
+  #message {
+    text-align: center;
+    margin-top: 10px;
+    font-size: 1em;
+    min-height: 20px;
   }
 </style>
 </head>
@@ -71,21 +155,23 @@
 
 <div class="balance" id="balanceDisplay">Баланс: 0 ₽</div>
 <input type="number" id="bet-input" placeholder="Введите ставку" min="1" />
+
+<!-- Кнопка "Начать игру" -->
 <button id="start-game-btn">Начать игру</button>
 <p id="message"></p>
 
 <h1>Игра Молния</h1>
-<p>Выберите ячейку и нажмите "Старт"</p>
+<p style="text-align:center;">Выберите ячейку и нажмите "Начать игру"</p>
 
-<div id="game-container">
+<div id="game-container" style="position: relative;">
   <!-- ячейки создаются динамически -->
 </div>
 
-<button id="play-btn">Старт</button>
-<div id="result"></div>
+<!-- Молния с эффектом -->
+<div id="lightning-effect"></div>
 
 <script>
-const GITHUB_TOKEN = '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'; // вставьте сюда ваш токен
+const GITHUB_TOKEN = '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'; // ваш токен
 const GITHUB_REPO = 'SaweNap/dfjghdfifgJSON';
 const FILE_PATH = 'users.json';
 
@@ -93,6 +179,8 @@ const balanceDisplay = document.getElementById('balanceDisplay');
 const messageEl = document.getElementById('message');
 const betInput = document.getElementById('bet-input');
 const startGameBtn = document.getElementById('start-game-btn');
+const gameContainer = document.getElementById('game-container');
+const lightningDiv = document.getElementById('lightning-effect');
 
 let userId = null;
 let users = [];
@@ -103,7 +191,6 @@ let lightningIndex = null;
 let gameInProgress = false;
 
 // Создаем ячейки
-const container = document.getElementById('game-container');
 for (let i = 0; i < 9; i++) {
   const cell = document.createElement('div');
   cell.className = 'cell';
@@ -115,10 +202,17 @@ for (let i = 0; i < 9; i++) {
     cell.classList.add('active');
     selectedCellIndex = i;
   };
-  container.appendChild(cell);
+  gameContainer.appendChild(cell);
 }
 
-// Получение userId из URL и загрузка данных
+// Запрет ctrl + колесо мыши
+window.addEventListener('wheel', (e) => {
+  if (e.ctrlKey) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// загрузка userId и данных
 (function() {
   const urlParams = new URLSearchParams(window.location.search);
   userId = urlParams.get('id');
@@ -130,7 +224,6 @@ for (let i = 0; i < 9; i++) {
         updateBalanceDisplay(userBalance);
         checkButtonState();
       } else {
-        // Пользователь не найден
         updateBalanceDisplay(0);
         checkButtonState();
         messageEl.textContent = 'Пользователь не найден!';
@@ -149,14 +242,14 @@ function updateBalanceDisplay(balance) {
 
 function checkButtonState() {
   if (userBalance <= 0 || !currentUser) {
-    document.getElementById('start-game-btn').disabled = true;
+    startGameBtn.disabled = true;
     if (!currentUser) {
       messageEl.textContent = 'Пользователь не найден!';
     } else {
       messageEl.textContent = 'Баланс 0 или пользователь не загружен.';
     }
   } else {
-    document.getElementById('start-game-btn').disabled = false;
+    startGameBtn.disabled = false;
     messageEl.textContent = '';
   }
 }
@@ -186,10 +279,12 @@ async function startGame(bet) {
   gameInProgress = true;
   document.getElementById('result').textContent = '';
 
-  // Выбираем молнию
+  // выбираем молнию
   lightningIndex = Math.floor(Math.random() * 9);
+  
+  // поЀазываем молнию с анимацией
+  showLightning();
 
-  // Показываем молнию
   setTimeout(() => {
     document.querySelectorAll('.cell')[lightningIndex].classList.add('active');
 
@@ -213,7 +308,49 @@ async function startGame(bet) {
   }, Math.random() * 1000 + 1000);
 }
 
-// Загрузка пользователей с GitHub
+// Функция для анимации молнии
+function showLightning() {
+  lightningDiv.innerHTML = '';
+  lightningDiv.style.display = 'block';
+
+  const lightning = document.createElement('div');
+  lightning.className = 'lightning';
+
+  // Создаем мерцания
+  for (let i = 0; i < 3; i++) {
+    const flicker = document.createElement('div');
+    flicker.style.position = 'absolute';
+    flicker.style.width = '100%';
+    flicker.style.height = '100%';
+    flicker.style.background = 'linear-gradient(135deg, #ffff00, #ffcc00)';
+    flicker.style.mixBlendMode = 'screen';
+    flicker.style.opacity = Math.random() * 0.8 + 0.2;
+    flicker.style.transform = `rotate(${Math.random() * 10 - 5}deg)`;
+    flicker.style.filter = `blur(${Math.random() * 2 + 1}px)`;
+    lightning.appendChild(flicker);
+  }
+
+  lightningDiv.appendChild(lightning);
+  lightning.style.animation = 'flicker 0.2s infinite';
+
+  // Удаляем эффект через короткое время
+  setTimeout(() => {
+    lightningDiv.classList.remove('show');
+    lightning.innerHTML = '';
+    lightningDiv.style.display = 'none';
+  }, 300);
+}
+
+// Анимация мерцания молнии
+const styleSheet = document.styleSheets[0];
+styleSheet.insertRule(`
+@keyframes flicker {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.4; filter: brightness(2); }
+}
+`, styleSheet.cssRules.length);
+
+// Загрузка и сохранение данных
 async function loadUsers() {
   const url = `https://raw.githubusercontent.com/${GITHUB_REPO}/main/${FILE_PATH}`;
   const response = await fetch(url);
@@ -224,7 +361,6 @@ async function loadUsers() {
   }
 }
 
-// Обновление файла users.json на GitHub
 async function saveUserBalance() {
   await loadUsers();
   const idx = users.findIndex(u => u.id.toString() === userId.toString());
@@ -244,10 +380,7 @@ async function updateUsersOnGitHub() {
       'Accept': 'application/vnd.github.v3+json'
     }
   });
-  if (!getRes.ok) {
-    alert('Ошибка получения файла для обновления');
-    return;
-  }
+  if (!getRes.ok) { alert('Ошибка получения файла для обновления'); return; }
   const sha = (await getRes.json()).sha;
   const contentBase64 = btoa(JSON.stringify(users, null, 2));
   const payload = {
@@ -255,7 +388,7 @@ async function updateUsersOnGitHub() {
     content: contentBase64,
     sha: sha
   };
-  const putRes = await fetch(url, {
+  await fetch(url, {
     method: 'PUT',
     headers: {
       'Authorization': 'token ' + GITHUB_TOKEN,
@@ -263,9 +396,6 @@ async function updateUsersOnGitHub() {
     },
     body: JSON.stringify(payload)
   });
-  if (!putRes.ok) {
-    alert('Ошибка при обновлении файла на GitHub');
-  }
 }
 </script>
 </body>
