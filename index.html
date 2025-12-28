@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Игра Молния</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #222;
+    color: #fff;
+    text-align: center;
+    margin-top: 50px;
+  }
+
+  h1 {
+    margin-bottom: 20px;
+  }
+
+  #game-container {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .cell {
+    width: 100px;
+    height: 100px;
+    margin: 10px;
+    background: #555;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    cursor: pointer;
+    transition: background 0.3s;
+  }
+
+  .cell:hover {
+    background: #777;
+  }
+
+  .active {
+    background: yellow;
+  }
+
+  #result {
+    margin-top: 20px;
+    font-size: 20px;
+  }
+
+  #play-btn {
+    margin-top: 20px;
+    padding: 10px 20px;
+    font-size: 18px;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+
+<h1>Игра Молния</h1>
+<p>Выберите ячейку и нажмите "Старт"</p>
+
+<div id="game-container">
+  <!-- ячейки будут созданы динамически -->
+</div>
+
+<button id="play-btn">Старт</button>
+<div id="result"></div>
+
+<script>
+  const container = document.getElementById('game-container');
+  const resultDiv = document.getElementById('result');
+  const playBtn = document.getElementById('play-btn');
+
+  let selectedCellIndex = null;
+  let lightningIndex = null;
+  let gameInProgress = false;
+
+  // Создаем ячейки
+  for (let i = 0; i < 9; i++) {
+    const cell = document.createElement('div');
+    cell.className = 'cell';
+    cell.textContent = i + 1;
+    cell.dataset.index = i;
+    cell.onclick = () => {
+      if (gameInProgress) {
+        // Можно выбрать ячейку только до запуска раунда
+        // или оставить так, чтобы можно было менять выбор
+        // Для простоты - игнорируем изменение выбора во время игры
+        return;
+      }
+      // Убираем выделение со всех
+      document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+      // Выделяем выбранную
+      cell.classList.add('active');
+      selectedCellIndex = i;
+    };
+    container.appendChild(cell);
+  }
+
+  function startGame() {
+    if (selectedCellIndex === null) {
+      alert('Пожалуйста, выберите ячейку');
+      return;
+    }
+    resultDiv.textContent = '';
+    gameInProgress = true;
+
+    // Случайно выбираем ячейку молнии
+    lightningIndex = Math.floor(Math.random() * 9);
+
+    // Показываем молнию через 1-2 секунды
+    setTimeout(() => {
+      // подсвечиваем молнию
+      document.querySelectorAll('.cell')[lightningIndex].classList.add('active');
+
+      // Проверяем победу через 1 секунду
+      setTimeout(() => {
+        if (lightningIndex === selectedCellIndex) {
+          resultDiv.textContent = 'Поздравляем! Вы угадали!';
+        } else {
+          resultDiv.textContent = `Молния была в ячейке ${lightningIndex + 1}. Попробуйте еще раз!`;
+        }
+
+        // Снимаем выделение
+        document.querySelectorAll('.cell').forEach(c => c.classList.remove('active'));
+        gameInProgress = false;
+      }, 1000);
+
+    }, Math.random() * 1000 + 1000); // задержка 1-2 сек
+  }
+
+  playBtn.onclick = startGame;
+</script>
+
+</body>
+</html>
